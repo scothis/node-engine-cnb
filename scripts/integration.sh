@@ -21,7 +21,5 @@ export CNB_RUN_IMAGE=${CNB_RUN_IMAGE:-packs/run}
 docker pull $CNB_BUILD_IMAGE
 docker pull $CNB_RUN_IMAGE
 
-#cd integration
-
 echo "Run Buildpack Runtime Integration Tests"
-go test ./integration/... -v -run Integration
+go test ./integration -v -run Integration
