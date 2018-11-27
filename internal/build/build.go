@@ -2,20 +2,21 @@ package build
 
 import (
 	"fmt"
+
 	"github.com/cloudfoundry/libjavabuildpack"
 )
 
 const NodeDependency = "node"
 
 type Node struct {
-	buildContribution, launchContribution bool
-	cacheLayer                            libjavabuildpack.DependencyCacheLayer
-	launchLayer                           libjavabuildpack.DependencyLaunchLayer
+	BuildContribution, LaunchContribution bool
+	CacheLayer                            libjavabuildpack.DependencyCacheLayer
+	LaunchLayer                           libjavabuildpack.DependencyLaunchLayer
 }
 
-func NewNode(builder libjavabuildpack.Build) (Node, bool, error) {
-	bp, ok := builder.BuildPlan[NodeDependency]
-	if !ok {
+func NewNode(builder libjavabuildpack.Build) (n Node, planExists bool, e error) {
+	bp, planExists := builder.BuildPlan[NodeDependency]
+	if !planExists {
 		return Node{}, false, nil
 	}
 
@@ -31,14 +32,14 @@ func NewNode(builder libjavabuildpack.Build) (Node, bool, error) {
 
 	node := Node{}
 
-	if _, ok := bp.Metadata["build"]; ok {
-		node.buildContribution = true
-		node.cacheLayer = builder.Cache.DependencyLayer(dep)
+	if _, contributeBuild := bp.Metadata["build"]; contributeBuild {
+		node.BuildContribution = true
+		node.CacheLayer = builder.Cache.DependencyLayer(dep)
 	}
 
-	if _, ok := bp.Metadata["launch"]; ok {
-		node.launchContribution = true
-		node.launchLayer = builder.Launch.DependencyLayer(dep)
+	if _, contributeLaunch := bp.Metadata["launch"]; contributeLaunch {
+		node.LaunchContribution = true
+		node.LaunchLayer = builder.Launch.DependencyLayer(dep)
 	}
 
 	return node, true, nil
@@ -55,8 +56,8 @@ var environment = map[string]string{
 }
 
 func (n Node) Contribute() error {
-	if n.buildContribution {
-		err := n.cacheLayer.Contribute(func(artifact string, layer libjavabuildpack.DependencyCacheLayer) error {
+	if n.BuildContribution {
+		err := n.CacheLayer.Contribute(func(artifact string, layer libjavabuildpack.DependencyCacheLayer) error {
 			layer.Logger.SubsequentLine("Expanding to %s", layer.Root)
 			if err := libjavabuildpack.ExtractTarGz(artifact, layer.Root, 1); err != nil {
 				return err
@@ -77,19 +78,19 @@ func (n Node) Contribute() error {
 		}
 	}
 
-	if n.launchContribution {
-		err := n.launchLayer.Contribute(func(artifact string, layer libjavabuildpack.DependencyLaunchLayer) error {
+	if n.LaunchContribution {
+		err := n.LaunchLayer.Contribute(func(artifact string, layer libjavabuildpack.DependencyLaunchLayer) error {
 			layer.Logger.SubsequentLine("Expanding to %s", layer.Root)
 			if err := libjavabuildpack.ExtractTarGz(artifact, layer.Root, 1); err != nil {
 				return err
 			}
 
 			layer.Logger.SubsequentLine("Writing profile.d/NODE_HOME")
-			layer.WriteProfile("NODE_HOME", fmt.Sprintf("export NODE_HOME=%s", layer.Root))
+			layer.WriteProfile("NODE_HOME", fmt.Sprintf("export NODE_HOME=\"%s\"", layer.Root))
 
 			for key, value := range environment {
 				layer.Logger.SubsequentLine("Writing profile.d/" + key)
-				layer.WriteProfile(key, fmt.Sprintf("export %s=%s", key, value))
+				layer.WriteProfile(key, fmt.Sprintf("export %s=\"%s\"", key, value))
 			}
 
 			return nil
