@@ -7,7 +7,7 @@ cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 
 echo "Target OS is $TARGET_OS"
 echo -n "Creating buildpack directory..."
-bp_dir=/tmp/"${PWD##*/}"_$(openssl rand -hex 12)
+bp_dir="${PWD##*/}"_$(openssl rand -hex 12)
 mkdir $bp_dir
 echo "done"
 
@@ -25,3 +25,23 @@ for b in $(ls cmd); do
     echo "done"
 done
 echo "Buildpack packaged into: $bp_dir"
+
+pushd $bp_dir
+    tar czvf ../nodejs-cnb.tgz *
+popd
+
+shasum="$(shasum -a 256 nodejs-cnb.tgz | cut -d ' ' -f1)"
+
+rm -rf $bp_dir
+rm -rf "/Users/pivotal/.buildpack-packager/cache"
+
+
+script=$(cat <<EOF
+require 'YAML'
+file = '/Users/pivotal/workspace/nodejs-buildpack/manifest.yml'
+m = YAML.load_file(file)
+m['dependencies'][0]['sha256'] = '$shasum'
+File.open(file, 'w') {|f| f.write m.to_yaml }
+EOF
+)
+ruby -e "$script"

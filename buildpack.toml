@@ -4,6 +4,9 @@ id = "org.cloudfoundry.buildpacks.nodejs"
 name = "Node.js Buildpack"
 version = "0.0.4"
 
+[[metadata.default_dependencies]]
+"node" = "6.16.0"
+
 [[metadata.dependencies]]
 id = "node"
 name = "NodeJS"
