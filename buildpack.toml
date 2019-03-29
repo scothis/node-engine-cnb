@@ -9,8 +9,8 @@ node = "6.16.0"
 
 [metadata]
     include_files = [
-        "bin/build",
-        "bin/detect",
+        "bin/cmd/build",
+        "bin/cmd/detect",
         "buildpack.toml",
         "go.mod",
         "go.sum",
