@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/nodejs-cnb/node"
@@ -29,25 +32,65 @@ func main() {
 }
 
 func runDetect(context detect.Detect) (int, error) {
+	version := context.BuildPlan[node.Dependency].Version
+
 	nvmrcPath := filepath.Join(context.Application.Root, ".nvmrc")
-	exists, err := helper.FileExists(nvmrcPath)
+	nvmrcExists, err := helper.FileExists(nvmrcPath)
 	if err != nil {
 		return context.Fail(), err
 	}
 
-	if exists {
-		version, err := nvmrc.GetVersion(nvmrcPath, context.Logger)
+	nvmrcVersion := version
+	if nvmrcExists {
+		nvmrcVersion, err = nvmrc.GetVersion(nvmrcPath, context.Logger)
+		version = nvmrcVersion
 		if err != nil {
 			return context.Fail(), err
 		}
-
-		return context.Pass(buildplan.BuildPlan{
-			node.Dependency: {
-				Version:  version,
-				Metadata: buildplan.Metadata{"launch": true},
-			},
-		})
 	}
 
-	return context.Pass(buildplan.BuildPlan{})
+	buildpackYAMLPath := filepath.Join(context.Application.Root, "buildpack.yml")
+	bpYmlExists, err := helper.FileExists(buildpackYAMLPath)
+	if err != nil {
+		return detect.FailStatusCode, err
+	}
+
+	buildpackYmlVersion := version
+	if bpYmlExists {
+		buildpackYmlVersion, err = readBuildpackYamlVersion(buildpackYAMLPath)
+		version = buildpackYmlVersion
+		if err != nil {
+			return detect.FailStatusCode, err
+		}
+	}
+
+	if bpYmlExists && nvmrcExists && buildpackYmlVersion != nvmrcVersion {
+		context.Logger.Info("There is a mismatch between versions in the buildpack.yml and the .nvmrc, buildpack.yml will take precedence")
+	}
+
+	return context.Pass(buildplan.BuildPlan{
+		node.Dependency: buildplan.Dependency{
+			Version:  version,
+			Metadata: buildplan.Metadata{"launch": true},
+		},
+	})
+
+}
+
+func readBuildpackYamlVersion(buildpackYAMLPath string) (string, error) {
+	buf, err := ioutil.ReadFile(buildpackYAMLPath)
+	if err != nil {
+		return "", err
+	}
+
+	config := struct {
+		Node struct {
+			Version string `yaml:"version"`
+		} `yaml:"node"`
+	}{}
+	if err := yaml.Unmarshal(buf, &config); err != nil {
+		return "", err
+	}
+
+	return config.Node.Version, nil
 }
