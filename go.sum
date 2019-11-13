@@ -31,6 +31,8 @@ github.com/cloudfoundry/libcfbuildpack v1.89.0 h1:A0OXihcHjvDRLYendhfqMxTBVe5pi5
 github.com/cloudfoundry/libcfbuildpack v1.89.0/go.mod h1:ufhp/bp0LxbDDwbf2Ms3Bf4x9YnLr9dkL1RTUYSdKg0=
 github.com/cloudfoundry/libcfbuildpack v1.91.3 h1:SvknKBrrfX1sD6cz2RIm+zxKIbn0OaOdja1aECZITys=
 github.com/cloudfoundry/libcfbuildpack v1.91.3/go.mod h1:oHi1a/+zLoZPtxOR62SZLp0rZ/bYJ2Xp85gsoxBeYEM=
+github.com/cloudfoundry/npm-cnb v0.0.62 h1:/Qas5eZAz1YtmJYryFY7bNYi1H0YCcHQsoTaP0wD4/w=
+github.com/cloudfoundry/npm-cnb v0.0.62/go.mod h1:AqRZKbzKMNUxy3Ox7w48/r18yKKS0lVeP+B5kXehUzY=
 github.com/cloudfoundry/packit v0.0.0-20191014140300-f8d2e0b20a04 h1:IKq64UyPDs+HD8dDE7fRHC+W/Vw2L0J+GfPuTiTTo50=
 github.com/cloudfoundry/packit v0.0.0-20191014140300-f8d2e0b20a04/go.mod h1:m8hk5BTIclmOWMxv3aQKIU/0LA4FVe4XKC9o0VNsLow=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
@@ -41,6 +43,7 @@ github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
 github.com/golang/mock v1.2.0/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
+github.com/golang/mock v1.3.1 h1:qGJ6qTW+x6xX/my+8YUVl4WNpX9B7+/l2tRsHGZ7f2s=
 github.com/golang/mock v1.3.1/go.mod h1:sBzyDLLjw3U8JLTeZvSv8jJB+tU5PVekmnlKIyFUx0Y=
 github.com/golang/protobuf v1.2.0 h1:P3YflyNX/ehuJFLhxviNdFxQPkGK5cDcApsge1SqnvM=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
