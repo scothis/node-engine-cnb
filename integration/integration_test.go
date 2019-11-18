@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 

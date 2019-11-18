@@ -1,20 +1,25 @@
 package packit
 
-import "os"
+import (
+	"os"
+
+	"github.com/BurntSushi/toml"
+	"github.com/cloudfoundry/node-engine-cnb/packit/exit"
+)
 
 type BuildPlanProvision struct {
-	Name string
+	Name string `toml:"name"`
 }
 
 type BuildPlanRequirement struct {
-	Name     string
-	Version  string
-	Metadata interface{}
+	Name     string      `toml:"name"`
+	Version  string      `toml:"version"`
+	Metadata interface{} `toml:"metadata"`
 }
 
 type BuildPlan struct {
-	Provides []BuildPlanProvision
-	Requires []BuildPlanRequirement
+	Provides []BuildPlanProvision   `toml:"provides"`
+	Requires []BuildPlanRequirement `toml:"requires"`
 }
 
 type DetectContext struct {
@@ -27,15 +32,40 @@ type DetectResult struct {
 
 type DetectFunc func(DetectContext) (DetectResult, error)
 
-func Detect(args []string, f DetectFunc) {
-	dir, err := os.Getwd()
-	if err != nil {
-		//TODO: need to implement ErrorFunc in order to test this
-		panic("blah")
+func Detect(f DetectFunc, options ...Option) {
+	config := Config{
+		exitHandler: exit.NewHandler(),
+		args:        os.Args,
 	}
 
-	f(DetectContext{
+	for _, option := range options {
+		config = option(config)
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		config.exitHandler.Error(err)
+		return
+	}
+
+	result, err := f(DetectContext{
 		WorkingDir: dir,
 	})
+	if err != nil {
+		config.exitHandler.Error(err)
+		return
+	}
 
+	file, err := os.OpenFile(config.args[2], os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		config.exitHandler.Error(err)
+		return
+	}
+	defer file.Close()
+
+	err = toml.NewEncoder(file).Encode(result.Plan)
+	if err != nil {
+		config.exitHandler.Error(err)
+		return
+	}
 }

@@ -1,12 +1,14 @@
 package packit_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/cloudfoundry/node-engine-cnb/packit"
+	"github.com/cloudfoundry/node-engine-cnb/packit/fakes"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -14,8 +16,11 @@ import (
 
 func testDetect(t *testing.T, context spec.G, it spec.S) {
 	var (
-		workingDir string
-		tmpDir     string
+		Expect = NewWithT(t).Expect
+
+		workingDir  string
+		tmpDir      string
+		exitHandler *fakes.ExitHandler
 	)
 
 	it.Before(func() {
@@ -30,6 +35,8 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(os.Chdir(tmpDir)).To(Succeed())
+
+		exitHandler = &fakes.ExitHandler{}
 	})
 
 	it.After(func() {
@@ -40,7 +47,7 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 	it("provides the detect context to the given DetectFunc", func() {
 		var context packit.DetectContext
 
-		packit.Detect(nil, func(ctx packit.DetectContext) (packit.DetectResult, error) {
+		packit.Detect(func(ctx packit.DetectContext) (packit.DetectResult, error) {
 			context = ctx
 
 			return packit.DetectResult{}, nil
@@ -51,32 +58,106 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		}))
 	})
 
+	it("writes out the buildplan.toml", func() {
+		path := filepath.Join(tmpDir, "buildplan.toml")
+
+		packit.Detect(func(packit.DetectContext) (packit.DetectResult, error) {
+			return packit.DetectResult{
+				Plan: packit.BuildPlan{
+					Provides: []packit.BuildPlanProvision{
+						{Name: "some-provision"},
+					},
+					Requires: []packit.BuildPlanRequirement{
+						{
+							Name:    "some-requirement",
+							Version: "some-version",
+							Metadata: map[string]string{
+								"some-key": "some-value",
+							},
+						},
+					},
+				},
+			}, nil
+		}, packit.WithArgs([]string{"", "", path}))
+
+		contents, err := ioutil.ReadFile(path)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(contents)).To(MatchTOML(`
+[[provides]]
+name = "some-provision"
+
+[[requires]]
+name = "some-requirement"
+version = "some-version"
+
+[requires.metadata]
+some-key = "some-value"
+`))
+	})
+
+	context("when the DetectFunc returns an error", func() {
+		it("calls the ExitHandler with that error", func() {
+			packit.Detect(func(ctx packit.DetectContext) (packit.DetectResult, error) {
+				return packit.DetectResult{}, errors.New("failed to detect")
+			}, packit.WithExitHandler(exitHandler))
+
+			Expect(exitHandler.ErrorCall.Receives.Error).To(MatchError("failed to detect"))
+		})
+	})
+
 	context("failure cases", func() {
-		context("when the $PWD is set to a directory that does not exist", func() {
-			var workingDir string
-
-			it.Before(func() {
-				workingDir = os.Getenv("PWD")
-
-				Expect(os.Setenv("PWD", "/no/such/directory")).To(Succeed())
-			})
-
-			it.After(func() {
-				Expect(os.Setenv("PWD", workingDir)).To(Succeed())
-			})
-
+		context("when the buildplan.toml cannot be opened", func() {
 			it("returns an error", func() {
-				var context packit.DetectContext
+				path := filepath.Join(tmpDir, "buildplan.toml")
+				_, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0000)
+				Expect(err).NotTo(HaveOccurred())
 
-				packit.Detect(nil, func(ctx packit.DetectContext) (packit.DetectResult, error) {
-					context = ctx
+				packit.Detect(func(packit.DetectContext) (packit.DetectResult, error) {
+					return packit.DetectResult{
+						Plan: packit.BuildPlan{
+							Provides: []packit.BuildPlanProvision{
+								{Name: "some-provision"},
+							},
+							Requires: []packit.BuildPlanRequirement{
+								{
+									Name:    "some-requirement",
+									Version: "some-version",
+									Metadata: map[string]string{
+										"some-key": "some-value",
+									},
+								},
+							},
+						},
+					}, nil
+				}, packit.WithArgs([]string{"", "", path}), packit.WithExitHandler(exitHandler))
 
-					return packit.DetectResult{}, nil
-				})
+				Expect(exitHandler.ErrorCall.Receives.Error).To(MatchError(ContainSubstring("permission denied")))
+			})
+		})
 
-				Expect(context).To(Equal(packit.DetectContext{
-					WorkingDir: tmpDir,
-				}))
+		context("when the buildplan.toml cannot be encoded", func() {
+			it("returns an error", func() {
+				path := filepath.Join(tmpDir, "buildplan.toml")
+
+				packit.Detect(func(packit.DetectContext) (packit.DetectResult, error) {
+					return packit.DetectResult{
+						Plan: packit.BuildPlan{
+							Provides: []packit.BuildPlanProvision{
+								{Name: "some-provision"},
+							},
+							Requires: []packit.BuildPlanRequirement{
+								{
+									Name:     "some-requirement",
+									Version:  "some-version",
+									Metadata: map[int]int{},
+								},
+							},
+						},
+					}, nil
+				}, packit.WithArgs([]string{"", "", path}), packit.WithExitHandler(exitHandler))
+
+				Expect(exitHandler.ErrorCall.Receives.Error).To(MatchError(ContainSubstring("cannot encode a map with non-string key type")))
 			})
 		})
 	})

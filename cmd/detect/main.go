@@ -1,9 +1,12 @@
 package main
 
-import "os"
-import "github.com/cloudfoundry/node-engine-cnb/packit"
-import "github.com/cloudfoundry/node-engine-cnb/node"
+import (
+	"github.com/cloudfoundry/node-engine-cnb/node"
+	"github.com/cloudfoundry/node-engine-cnb/packit"
+)
 
 func main() {
-	packit.Detect(os.Args, node.Detect())
+	buildpackYMLParser := node.NewBuildpackYMLParser()
+
+	packit.Detect(node.Detect(nil, buildpackYMLParser))
 }
