@@ -6,13 +6,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type BuildpackYMLParser struct{}
+type BuildpackYMLVersionParser struct{}
 
-func NewBuildpackYMLParser() BuildpackYMLParser {
-	return BuildpackYMLParser{}
+func NewBuildpackYMLVersionParser() BuildpackYMLVersionParser {
+	return BuildpackYMLVersionParser{}
 }
 
-func (p BuildpackYMLParser) Parse(path string) (string, error) {
+func (p BuildpackYMLVersionParser) Parse(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {

@@ -9,7 +9,10 @@ import (
 
 func TestUnitNode(t *testing.T) {
 	suite := spec.New("node", spec.Report(report.Terminal{}))
-	suite("BuildpackYMLParser", testBuildpackYMLParser)
+	suite("Build", testBuild)
+	suite("BuildpackYMLVersionParser", testBuildpackYMLVersionParser)
 	suite("Detect", testDetect)
+	suite("NvmrcParser", testNvmrcParser)
+	suite("PlanEntryResolver", testPlanEntryResolver)
 	suite.Run(t)
 }

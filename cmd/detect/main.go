@@ -6,7 +6,8 @@ import (
 )
 
 func main() {
-	buildpackYMLParser := node.NewBuildpackYMLParser()
+	nvmrcParser := node.NewNvmrcParser()
+	buildpackYMLParser := node.NewBuildpackYMLVersionParser()
 
-	packit.Detect(node.Detect(nil, buildpackYMLParser))
+	packit.Detect(node.Detect(nvmrcParser, buildpackYMLParser))
 }

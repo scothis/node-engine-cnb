@@ -13,7 +13,9 @@ import (
 
 func TestUnitPackit(t *testing.T) {
 	suite := spec.New("packit", spec.Report(report.Terminal{}))
+	suite("Build", testBuild)
 	suite("Detect", testDetect)
+	suite("Layers", testLayers)
 	suite.Run(t)
 }
 

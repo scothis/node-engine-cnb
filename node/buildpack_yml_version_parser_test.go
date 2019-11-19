@@ -11,12 +11,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func testBuildpackYMLParser(t *testing.T, context spec.G, it spec.S) {
+func testBuildpackYMLVersionParser(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
 		path   string
-		parser node.BuildpackYMLParser
+		parser node.BuildpackYMLVersionParser
 	)
 
 	it.Before(func() {
@@ -32,7 +32,7 @@ nodejs:
 
 		path = file.Name()
 
-		parser = node.NewBuildpackYMLParser()
+		parser = node.NewBuildpackYMLVersionParser()
 	})
 
 	it.After(func() {
